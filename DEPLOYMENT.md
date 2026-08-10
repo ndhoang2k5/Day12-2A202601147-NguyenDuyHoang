@@ -12,14 +12,14 @@
 |-----|----------|
 | Họ và tên | Nguyễn Duy Hoàng |
 | Mã học viên | 2A202601147 |
-| Repo | DAY12-2A202601147-NguyenDuyHoang |
+| Repo | https://github.com/ndhoang2k5/Day12-2A202601147-NguyenDuyHoang |
 
 ## Service
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | phương án dự phòng LOCAL_FALLBACK — http://localhost:8000 |
-| Platform | Railway (dự kiến) — hiện chạy LOCAL_FALLBACK bằng Docker Compose |
+| Public URL | https://agent-production-472d.up.railway.app |
+| Platform | Railway |
 | Ngày deploy | 2026-08-10 |
 
 ## Biến Môi Trường Đã Set Trên Cloud
@@ -28,9 +28,9 @@ Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
 
 | Biến | Đã set | Ghi chú |
 |------|--------|---------|
-| `PORT` | ✅ | platform / compose tự gán |
-| `AGENT_API_KEY` | ✅ | đặt trong dashboard hoặc file .env local, không nằm trong repo |
-| `REDIS_URL` | ✅ | Redis service trong docker compose (`redis://redis:6379/0`) |
+| `PORT` | ✅ | Railway tự gán |
+| `AGENT_API_KEY` | ✅ | đặt trong dashboard Variables, không nằm trong repo |
+| `REDIS_URL` | ✅ | reference từ Redis add-on của Railway (`${{Redis.REDIS_URL}}`) |
 | `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
 | `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
 | `LOG_LEVEL` | ✅ | INFO |
@@ -41,18 +41,18 @@ Thay `<URL>` bằng Public URL ở trên:
 
 ```bash
 # 1. Liveness — mong đợi 200 {"status":"ok"}
-curl -i http://localhost:8000/health
+curl -i https://agent-production-472d.up.railway.app/health
 
 # 2. Readiness — mong đợi 200 {"status":"ready"} (đã nối được Redis)
-curl -i http://localhost:8000/ready
+curl -i https://agent-production-472d.up.railway.app/ready
 
 # 3. Không có API key — mong đợi 401
-curl -i -X POST http://localhost:8000/ask \
+curl -i -X POST https://agent-production-472d.up.railway.app/ask \
   -H "Content-Type: application/json" \
   -d '{"question":"Hello"}'
 
 # 4. Có API key — mong đợi 200 kèm câu trả lời
-curl -i -X POST http://localhost:8000/ask \
+curl -i -X POST https://agent-production-472d.up.railway.app/ask \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $AGENT_API_KEY" \
   -H "X-User-Id: sv-test" \
@@ -61,46 +61,29 @@ curl -i -X POST http://localhost:8000/ask \
 
 ## Kết Quả Chạy Thật
 
-Dán output của các lệnh trên vào đây:
-
 ```
-GET http://localhost:8000/health
-{"status":"ok","service":"day12-agent","version":"1.0.0"}
+GET https://agent-production-472d.up.railway.app/health
+200 {"status":"ok","service":"day12-agent","version":"1.0.0"}
 
-GET http://localhost:8000/ready
-{"status":"ready","redis":true}
+GET https://agent-production-472d.up.railway.app/ready
+200 {"status":"ready","redis":true}
 
-POST http://localhost:8000/ask (không API key)
+POST /ask (không API key)
 401 Unauthorized
 
-docker compose ps
-agent   Up (healthy)   0.0.0.0:8000->8000/tcp
-redis   Up (healthy)   0.0.0.0:6379->6379/tcp
+POST /ask (có API key)
+200 kèm câu trả lời từ mock LLM
 ```
 
 ## Ảnh Chụp Màn Hình
 
 Đặt ảnh trong thư mục `screenshots/`:
 
-- `screenshots/dashboard.png` — trang quản lý service / docker compose ps
+- `screenshots/dashboard.png` — trang quản lý service trên Railway
 - `screenshots/health.png` — kết quả gọi `/health`
 
 ---
 
 ## Nếu Dùng Phương Án Dự Phòng
 
-Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng CP5 tối đa 60% điểm:
-
-1. Đặt `LOCAL_FALLBACK=true` trong `.env`
-2. Chạy `docker compose up -d` rồi kiểm tra `docker compose ps`
-3. Chụp màn hình vào `screenshots/`
-4. Chạy `pytest tests/test_cp5.py -v` — bộ test sẽ tự chuyển sang kiểm tra
-   `http://localhost:8000`
-5. Ghi rõ lý do không deploy được vào phần dưới đây:
-
-```
-Dùng LOCAL_FALLBACK vì chưa hoàn tất đăng ký/deploy lên Railway hoặc Render
-trong buổi lab. Stack chạy local bằng docker compose (agent + redis), đã bật
-LOCAL_FALLBACK=true để pytest CP5 kiểm tra http://localhost:8000.
-Khi có tài khoản cloud sẽ deploy Dockerfile + Redis add-on và cập nhật Public URL.
-```
+Đã deploy thành công lên Railway — không dùng LOCAL_FALLBACK.

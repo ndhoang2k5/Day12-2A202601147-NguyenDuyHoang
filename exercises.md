@@ -145,8 +145,8 @@ Ghi lại **một** lỗi bạn gặp khi deploy lên cloud (build fail, health 
 timeout, sai REDIS_URL, app không đọc `$PORT`...): thông báo lỗi là gì, bạn
 tìm ra nguyên nhân bằng cách nào, và sửa ra sao?
 
-> Lỗi thường gặp: `/ready` trả 503 sau khi deploy. Log/dashboard cho thấy app
-> không ping được Redis vì `REDIS_URL` chưa gắn vào service agent (chỉ có Redis
-> add-on riêng). Cách sửa: gắn biến `REDIS_URL` từ add-on vào web service, redeploy,
-> rồi gọi lại `/ready` đến khi trả 200. (Nếu chưa deploy cloud được: dùng
-> `LOCAL_FALLBACK=true` + `docker compose up -d` và ghi rõ lý do trong DEPLOYMENT.md.)
+> Lỗi gặp khi deploy Railway: `Invalid value for '--port': '$PORT' is not a valid integer`.
+> Healthcheck `/health` fail vì process crash ngay lúc start. Nguyên nhân: `startCommand`
+> trong `railway.toml` chạy uvicorn với `--port $PORT` nhưng không qua shell nên `$PORT`
+> thành chữ literal. Sửa thành `sh -c 'uvicorn ... --port ${PORT:-8000}'`, redeploy,
+> sau đó `/health` và `/ready` trả 200.
